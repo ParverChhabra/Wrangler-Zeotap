@@ -64,6 +64,8 @@ directive
     | stringList
     | numberRanges
     | properties
+    | BYTE_SIZE
+    | TIME_DURATION
   )*?
   ;
 
@@ -140,8 +142,9 @@ numberRange
  ;
 
 value
- : String | Number | Column | Bool
+ : String | Number | Column | Bool | BYTE_SIZE | TIME_DURATION
  ;
+
 
 ecommand
  : '!' Identifier
@@ -273,6 +276,31 @@ String
  : '\'' ( EscapeSequence | ~('\'') )* '\''
  | '"'  ( EscapeSequence | ~('"') )* '"'
  ;
+
+
+// ---- BYTE SIZE TOKENS ----
+BYTE_SIZE
+ : Number BYTE_UNIT
+ ;
+
+fragment BYTE_UNIT
+ : [kKmMgGtT][bB]
+ ;
+
+// ---- TIME DURATION TOKENS ----
+TIME_DURATION
+ : Number TIME_UNIT
+ ;
+
+fragment TIME_UNIT
+ : 'ms' | 's' | 'sec' | 'secs' | 'second' | 'seconds'
+ | 'm' | 'min' | 'mins' | 'minute' | 'minutes'
+ | 'h' | 'hr' | 'hrs' | 'hour' | 'hours'
+ ;
+
+
+
+
 
 EscapeSequence
    :   '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\')
