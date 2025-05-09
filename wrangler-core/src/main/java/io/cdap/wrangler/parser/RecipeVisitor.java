@@ -34,8 +34,6 @@ import io.cdap.wrangler.api.parser.Ranges;
 import io.cdap.wrangler.api.parser.Text;
 import io.cdap.wrangler.api.parser.TextList;
 import io.cdap.wrangler.api.parser.Token;
-import io.cdap.wrangler.api.parser.ByteSize;
-import io.cdap.wrangler.api.parser.TimeDuration;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -318,18 +316,6 @@ public final class RecipeVisitor extends DirectivesBaseVisitor<RecipeSymbol.Buil
     builder.addToken(new TextList(strs));
     return builder;
   }
-
-
-  @Override
-  public RecipeSymbol.Builder visitValue(DirectivesParser.ValueContext ctx) {
-    if (ctx.BYTE_SIZE() != null) {
-      builder.addToken(new ByteSize(ctx.getText()));
-    } else if (ctx.TIME_DURATION() != null) {
-      builder.addToken(new TimeDuration(ctx.getText()));
-    }
-    return builder;
-  }
-  
 
   private SourceInfo getOriginalSource(ParserRuleContext ctx) {
     int a = ctx.getStart().getStartIndex();

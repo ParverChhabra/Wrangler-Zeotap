@@ -1,81 +1,64 @@
-/*
- * Copyright © 2025 Cask Data, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
-
-
-
-
 package io.cdap.wrangler.api.parser;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 
-/**
- * A token representing a time duration like "150ms", "2h", or "3.5seconds".
- * Provides conversion to nanoseconds.
- */
-
 public class TimeDuration implements Token {
-  private final String raw;
-  private final long milliseconds;
+    private final long nanoseconds;
+    private final String original;
 
-  public TimeDuration(String value) {
-    this.raw = value;
-    this.milliseconds = parseToMillis(value);
-  }
+    public TimeDuration(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Time duration string cannot be null or empty");
+        }
+        this.original = value.trim().toLowerCase();
+        double number;
+        String unit;
+        int i = 0;
+        while (i < original.length() && (Character.isDigit(original.charAt(i)) || original.charAt(i) == '.')) i++;
+        if (i == 0 || i == original.length()) {
+            throw new IllegalArgumentException("Invalid time duration format: " + value);
+        }
+        try {
+            number = Double.parseDouble(original.substring(0, i));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid numeric part in time duration: " + value);
+        }
+        unit = original.substring(i).replaceAll("\\s+", "");
 
-  private long parseToMillis(String input) {
-    String normalized = input.trim().toLowerCase();
-    double number;
-    long multiplier;
-
-    if (normalized.endsWith("ms")) {
-      number = Double.parseDouble(normalized.replace("ms", ""));
-      multiplier = 1L;
-    } else if (normalized.matches(".*(s|sec|secs|second|seconds)$")) {
-      number = Double.parseDouble(normalized.replaceAll("[a-zA-Z]", ""));
-      multiplier = 1000L;
-    } else if (normalized.matches(".*(min|mins|minute|minutes)$")) {
-      number = Double.parseDouble(normalized.replaceAll("[a-zA-Z]", ""));
-      multiplier = 60L * 1000;
-    } else if (normalized.matches(".*(h|hr|hrs|hour|hours)$")) {
-      number = Double.parseDouble(normalized.replaceAll("[a-zA-Z]", ""));
-      multiplier = 60L * 60 * 1000;
-    } else {
-      throw new IllegalArgumentException("Unsupported time unit: " + input);
+        switch (unit) {
+            case "ns": this.nanoseconds = (long)(number); break;
+            case "ms": this.nanoseconds = (long)(number * 1_000_000); break;
+            case "s":  this.nanoseconds = (long)(number * 1_000_000_000); break;
+            case "m":  this.nanoseconds = (long)(number * 60 * 1_000_000_000); break;
+            case "h":  this.nanoseconds = (long)(number * 3600 * 1_000_000_000); break;
+            default: throw new IllegalArgumentException("Unknown or unsupported time unit: " + unit);
+        }
+        if (nanoseconds < 0) {
+            throw new IllegalArgumentException("Time duration cannot be negative: " + value);
+        }
     }
 
-    return (long) (number * multiplier);
-  }
+    public long getNanoseconds() {
+        return nanoseconds;
+    }
 
-  public long getMilliseconds() {
-    return milliseconds;
-  }
+    @Override
+    public TokenType type() {
+        return TokenType.TIME_DURATION;
+    }
 
-  @Override
-  public Object value() {
-    return raw;
-  }
+    @Override
+    public Object value() {
+        return nanoseconds;
+    }
 
-  @Override
-  public TokenType type() {
-    return TokenType.TIME_DURATION;
-  }
+    @Override
+    public JsonPrimitive toJson() {
+        return new JsonPrimitive(nanoseconds);
+    }
 
-  @Override
-  public JsonElement toJson() {
-    return new JsonPrimitive(raw);
-  }
+    @Override
+    public String toString() {
+        return original;
+    }
 }

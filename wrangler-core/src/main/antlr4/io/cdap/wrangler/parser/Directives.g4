@@ -64,8 +64,6 @@ directive
     | stringList
     | numberRanges
     | properties
-    | BYTE_SIZE
-    | TIME_DURATION
   )*?
   ;
 
@@ -144,7 +142,6 @@ numberRange
 value
  : String | Number | Column | Bool | BYTE_SIZE | TIME_DURATION
  ;
-
 
 ecommand
  : '!' Identifier
@@ -277,31 +274,6 @@ String
  | '"'  ( EscapeSequence | ~('"') )* '"'
  ;
 
-
-// ---- BYTE SIZE TOKENS ----
-BYTE_SIZE
- : Number BYTE_UNIT
- ;
-
-fragment BYTE_UNIT
- : [kKmMgGtT][bB]
- ;
-
-// ---- TIME DURATION TOKENS ----
-TIME_DURATION
- : Number TIME_UNIT
- ;
-
-fragment TIME_UNIT
- : 'ms' | 's' | 'sec' | 'secs' | 'second' | 'seconds'
- | 'm' | 'min' | 'mins' | 'minute' | 'minutes'
- | 'h' | 'hr' | 'hrs' | 'hour' | 'hours'
- ;
-
-
-
-
-
 EscapeSequence
    :   '\\' ('b'|'t'|'n'|'f'|'r'|'"'|'\''|'\\')
    |   UnicodeEscape
@@ -322,6 +294,14 @@ UnicodeEscape
 
 fragment
    HexDigit : ('0'..'9'|'a'..'f'|'A'..'F') ;
+
+BYTE_SIZE: DIGIT+ ('.' DIGIT+)? BYTE_UNIT;
+
+TIME_DURATION: DIGIT+ ('.' DIGIT+)? TIME_UNIT;
+
+fragment BYTE_UNIT: [kK][bB]? | [mM][bB]? | [gG][bB]? | [tT][bB]? | [bB];
+
+fragment TIME_UNIT: 'ns' | 'ms' | 's' | 'm' | 'h';
 
 Comment
  : ('//' ~[\r\n]* | '/*' .*? '*/' | '--' ~[\r\n]* ) -> skip
